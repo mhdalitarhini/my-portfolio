@@ -62,7 +62,10 @@ Handles navigation, scroll animations, and form validation
   // ---------------------------------------------------------
   // 5. CONTACT FORM VALIDATION
   // ---------------------------------------------------------
-  function validateForm(e) {
+  const forminit = typeof Forminit === 'function' ? new Forminit() : null;
+  const formId = 'sr9bx2lvna5';
+
+  async function validateForm(e) {
     e.preventDefault();
     let isValid = true;
     
@@ -71,7 +74,6 @@ Handles navigation, scroll animations, and form validation
     
     const name = document.getElementById('name');
     const email = document.getElementById('email');
-    const subject = document.getElementById('subject');
     const message = document.getElementById('message');
     
     // Name validation
@@ -93,22 +95,37 @@ Handles navigation, scroll animations, and form validation
       isValid = false;
     }
     
-    if (isValid) {
-      const recipient = 'mhd.ali.tarhini@gmail.com';
-      const emailSubject = subject.value.trim() || `Portfolio contact from ${name.value.trim()}`;
-      const emailBody = [
-        `Name: ${name.value.trim()}`,
-        `Email: ${email.value.trim()}`,
-        '',
-        message.value.trim()
-      ].join('\n');
-
-      window.location.href = `mailto:${recipient}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-      formSuccess.classList.add('show');
-      setTimeout(() => {
-        formSuccess.classList.remove('show');
-      }, 5000);
+    if (!isValid) {
+      return;
     }
+
+    const submitButton = contactForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+
+    if (!forminit) {
+      submitButton.disabled = false;
+      formSuccess.textContent = 'The form service is unavailable. Please try again.';
+      formSuccess.classList.add('show');
+      return;
+    }
+
+    const { redirectUrl, error } = await forminit.submit(formId, new FormData(contactForm));
+
+    submitButton.disabled = false;
+
+    if (error) {
+      formSuccess.textContent = error.message || 'Unable to send your message. Please try again.';
+      formSuccess.classList.add('show');
+      return;
+    }
+
+    formSuccess.textContent = 'Your message has been sent successfully.';
+    formSuccess.classList.add('show');
+    contactForm.reset();
+
+    setTimeout(() => {
+      window.location.href = redirectUrl || 'https://forminit.com/thank-you';
+    }, 500);
   }
   
   contactForm.addEventListener('submit', validateForm);
